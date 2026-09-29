@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, afterNextRender, inject, signal } from '@angular/core';
 
 import { Bilingual } from '../../i18n/locale';
 import { LocaleService } from '../../i18n/locale.service';
@@ -24,6 +24,40 @@ interface Layer {
 })
 export class SoilProfile {
   readonly i18n = inject(LocaleService);
+
+  /**
+   * Su un telefono il disegno intero scende sotto i 400 px e le note diventano
+   * illeggibili: si inquadrano solo gli strati e le note passano in un elenco.
+   * Solo nel browser: in prerender si parte sempre dalla versione completa.
+   */
+  readonly narrow = signal(false);
+
+  constructor() {
+    afterNextRender(() => {
+      const query = matchMedia('(max-width: 640px)');
+      this.narrow.set(query.matches);
+      query.addEventListener('change', (e) => this.narrow.set(e.matches));
+    });
+  }
+
+  /**
+   * Le note stanno in una colonna larga poco più di 220 unità: l'SVG non va a
+   * capo da solo, quindi si spezzano qui, a parole intere, prima di disegnarle.
+   */
+  wrap(text: string, max = 32): string[] {
+    const lines: string[] = [];
+    let line = '';
+    for (const word of text.split(' ')) {
+      if (line && (line + ' ' + word).length > max) {
+        lines.push(line);
+        line = word;
+      } else {
+        line = line ? line + ' ' + word : word;
+      }
+    }
+    if (line) lines.push(line);
+    return lines;
+  }
 
   readonly layers: Layer[] = [
     {

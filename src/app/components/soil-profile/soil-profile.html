@@ -1,6 +1,6 @@
 <svg
   class="soil"
-  viewBox="0 0 720 470"
+  [attr.viewBox]="narrow() ? '16 0 474 470' : '0 0 760 470'"
   role="img"
   [attr.aria-label]="
     i18n.locale() === 'it'
@@ -42,18 +42,22 @@
     <path [attr.d]="'M120,' + layer.y + ' H150'" stroke="var(--line-mid)" stroke-width="1" />
     <text class="soil-depth" x="116" [attr.y]="layer.y + 4" text-anchor="end">{{ layer.depth }}</text>
 
-    <!-- didascalia a destra -->
-    <path
-      [attr.d]="'M480,' + (layer.y + layer.height / 2) + ' H512'"
-      stroke="var(--line-mid)"
-      stroke-width="1"
-    />
-    <text class="soil-label" x="520" [attr.y]="layer.y + layer.height / 2 - 2">
-      {{ i18n.pick(layer.name) }}
-    </text>
-    <text class="soil-depth" x="520" [attr.y]="layer.y + layer.height / 2 + 14">
-      <tspan>{{ i18n.pick(layer.note) }}</tspan>
-    </text>
+    <!-- didascalia a destra (su telefono va nell'elenco sotto il disegno) -->
+    @if (!narrow()) {
+      <path
+        [attr.d]="'M480,' + (layer.y + layer.height / 2) + ' H512'"
+        stroke="var(--line-mid)"
+        stroke-width="1"
+      />
+      <text class="soil-label" x="520" [attr.y]="layer.y + layer.height / 2 - 2">
+        {{ i18n.pick(layer.name) }}
+      </text>
+      <text class="soil-depth" x="520" [attr.y]="layer.y + layer.height / 2 + 14">
+        @for (line of wrap(i18n.pick(layer.note)); track $index) {
+          <tspan x="520" [attr.dy]="$first ? 0 : 13">{{ line }}</tspan>
+        }
+      </text>
+    }
   }
 
   <!-- il ceppo e le radici -->
@@ -82,3 +86,15 @@
     }}
   </text>
 </svg>
+
+@if (narrow()) {
+  <ol class="soil-legend">
+    @for (layer of layers; track layer.depth) {
+      <li>
+        <span class="soil-legend-depth">{{ layer.depth }}</span>
+        <strong>{{ i18n.pick(layer.name) }}</strong>
+        <p>{{ i18n.pick(layer.note) }}</p>
+      </li>
+    }
+  </ol>
+}
